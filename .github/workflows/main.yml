@@ -1,0 +1,57 @@
+name: Process External Data
+
+on:
+  workflow_dispatch:  # 允许手动触发
+  schedule:
+    - cron: '0 9 * * *'  # 每天 UTC 时间 0:00 自动运行（可选）
+
+jobs:
+  process-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up environment
+        run: |
+          mkdir -p downloads outputs geoip
+
+      - name: Download from GitHub Release
+        run: |
+          curl -L -o downloads/sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v1.12.3/sing-box-1.12.3-linux-amd64.tar.gz"
+          tar -xzf downloads/sing-box.tar.gz -C downloads/
+          chmod +x downloads/sing-box
+
+      - name: Download from external link
+        env:
+          DOWNLOAD_TOKEN: ${{ secrets.DOWNLOAD_TOKEN }}
+        run: |
+          curl -L -o downloads/data.mmdb "https://ipinfo.io/data/ipinfo_lite.mmdb?token=$DOWNLOAD_TOKEN" 
+          # GOTO
+
+      - name: Set up compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++
+
+      - name: Compile program
+        run: |
+          g++ a.cpp -std=c++20 -O3 -o a
+          g++ b.cpp -std=c++20 -O3 -o b
+
+      - name: Run processing program
+        run: |
+          ./a downloads/data.mmdb outputs/dira/ || exit 1
+          ./b downloads/sing-box outputs/dira/ geoip/ || exit 2
+
+      - name: Commit output files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git remote set-url origin https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add geoip/
+          git commit -m "Add processed output files" || echo "No changes to commit"
+          git push
