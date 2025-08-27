@@ -7,6 +7,7 @@
 #include <map>
 #include <cstring>
 #include <set>
+#include <filesystem>
 
 using namespace std;
 
@@ -234,7 +235,8 @@ int main(int argc, char** argv) {
     if(dir.back() != '\\' && dir.back() != '/') {
         dir.push_back('/');
     }
-    // _setmaxstdio(2048); // ubuntu 不能用
+    filesystem::create_directories(dir);
+    // _setmaxstdio(2048);
     // printf("_getmaxstdio() = %lld\n", _getmaxstdio());
     auto clockbegin = clock();
     fileinfo finfo;
