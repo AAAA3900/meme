@@ -234,8 +234,8 @@ int main(int argc, char** argv) {
     if(dir.back() != '\\' && dir.back() != '/') {
         dir.push_back('/');
     }
-    _setmaxstdio(2048);
-    printf("_getmaxstdio() = %lld\n", _getmaxstdio());
+    // _setmaxstdio(2048); // ubuntu 不能用
+    // printf("_getmaxstdio() = %lld\n", _getmaxstdio());
     auto clockbegin = clock();
     fileinfo finfo;
     FILE* fp = fopen(filename.c_str(), "rb");
