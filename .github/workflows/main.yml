@@ -23,6 +23,7 @@ jobs:
         run: |
           curl -L -o downloads/sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v1.12.3/sing-box-1.12.3-linux-amd64.tar.gz"
           tar -xzf downloads/sing-box.tar.gz -C downloads/
+          mv downloads/sing-box-1.12.3-linux-amd64/sing-box downloads/
           chmod +x downloads/sing-box
 
       - name: Download from external link
