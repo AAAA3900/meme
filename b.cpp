@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     if(dir.back() != '\\' && dir.back() != '/') {
         dir.push_back('/');
     }
-    dir += "geoip_";
+    dir += "geoip-";
     vector<thread> v;
     auto threadcnt = thread::hardware_concurrency();
     threadcnt = max(1u, threadcnt);
