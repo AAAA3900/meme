@@ -6,8 +6,6 @@
 #include <queue>
 #include <map>
 #include <cstring>
-#include <set>
-#include <filesystem>
 
 using namespace std;
 
@@ -28,8 +26,9 @@ using ull = uint64;
 
 struct node {
     bitset<128> ip;
-    ll data;
     ll dep;
+    ll data;
+    node(bitset<128> _ip = 0, ll _dep = 0, ll _data = 0): ip(_ip), data(_data), dep(_dep) {}
 };
 struct fileinfo {
     ll size;
@@ -44,66 +43,48 @@ inline uint32 dz32(uint32 x) {
             | ((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000);
 }
 
-string hex(ushort x) {
-    string ret;
-    for(int i = 12; i >= 0; i -= 4) {
-        int t = (x >> i) & 0xf;
-        if(t <= 9) {
-            ret += ('0' + t);
-        }
-        else {
-            ret += ('a' - 10 + t);
-        }
-    }
-    return ret;
-}
-
-class mstring;
 class minterface {
 public:
     virtual ll size() const {return 0;}
-    virtual mstring find(const mstring& t) const = 0;
 };
 
 class mstring: public minterface {
 public:
-    static char* buf;
-    static ll index;
+    inline static char* buf;
+    inline static ll index = 1;
 private:
     ll len = 0;
-    char* s = 0;
+    ll p = 0;
 public:
-    mstring(): len(0), s(buf) {}
+    mstring(): len(0), p(0) {}
     mstring(const char* const _s, ll _len) {
         len =  _len;
-        s = buf + index;
+        p = index;
         index += len + 1;
-        memcpy(s, _s, len);
-        s[len] = 0;
+        memcpy(buf + p, _s, len);
+        buf[p + len] = 0;
     }
-    mstring(const mstring& t): s(t.s), len(t.len) {}
-    const char* const str() const {return s;}
+    mstring(const mstring& t): p(t.p), len(t.len) {}
+    const char* const str() const {return buf + p;}
     ll size() const {return len;}
-    bool operator==(const mstring& t) const {
-        return (size() == t.size()) && (strcmp(s, t.s) == 0);
-    }
+    ll pos() const {return p;}
     bool operator==(const char* const t) const {
-        return 0 == strcmp(s, t);
+        return 0 == strcmp(buf + p, t);
+    }
+    bool operator==(const mstring& t) const {
+         return (size() == t.size()) && (strcmp(buf + p, buf + t.p) == 0);
     }
     bool operator!=(const mstring& t) const {
         return !(*this == t);
     }
     bool operator<(const mstring& t) const {
-        return (strcmp(s, t.s) < 0);
+        return (strcmp(buf + p, buf + t.p) < 0);
     }
     bool operator>(const mstring& t) const {
-        return strcmp(s, t.s) > 0;
+        return strcmp(buf + p, buf + t.p) > 0;
     }
     ~mstring() {} // 不管了，或许可以先记下来，空闲时手动清理
-    mstring find(const mstring& t) const {return mstring();}
 };
-char* mstring::buf = nullptr;
-ll mstring::index = 1;
 
 class marray: public minterface {
 public:
@@ -117,23 +98,22 @@ public:
     }
 };
 
-queue<int64> errors;
-queue<node> datas;
+// 仅用于调试
+// queue<int64> errors;
+// queue<node> datas;
 ll maxdep = 0, mindep = 9999;
 ll globalj;
-minterface** globalmap;
 
-void dfs(int64 u, int64 dep, const uint32* const bufu32, const fileinfo& finfo, bitset<128> ip) {
+// TODO: 需要把 bufu32 改成 uint8* buf
+void dfs(int64 u, int64 dep, const uint32* const bufu32, const fileinfo& finfo, bitset<128> ip, vector<node> &datas) {
     if(u - finfo.nodecount > finfo.size - finfo.nodecount * 8) {
-        errors.push(u);
-        return;
+        printf("u - finfo.nodecount > finfo.size - finfo.nodecount * 8, u=%lld, finfo.nodecount=%lld, finfo.size=%lld\n", u, finfo.nodecount, finfo.size);
+        exit(123);
+        // errors.push(u);
+        // return;
     }
     if(u >= finfo.nodecount + 16) {
-        node node;
-        node.ip = ip;
-        node.dep = dep;
-        node.data = u - finfo.nodecount + finfo.nodecount * 8;
-        datas.push(node);
+        datas.emplace_back(ip, dep, u - finfo.nodecount + finfo.nodecount * 8);
         if(dep > maxdep) {
             maxdep = dep;
         }
@@ -152,12 +132,12 @@ void dfs(int64 u, int64 dep, const uint32* const bufu32, const fileinfo& finfo, 
     int64 left = dz32(bufu32[u * 2]);
     int64 right = dz32(bufu32[u * 2 + 1]);
     ip[127 - dep] = 0;
-    dfs(left, dep + 1, bufu32, finfo, ip);
+    dfs(left, dep + 1, bufu32, finfo, ip, datas);
     ip[127 - dep] = 1;
-    dfs(right, dep + 1, bufu32, finfo, ip);
+    dfs(right, dep + 1, bufu32, finfo, ip, datas);
 }
 
-minterface* jx(const ll u, ll& endpoint, const uchar* const buf, const fileinfo& finfo) {
+minterface* jx(const ll u, ll& endpoint, const uchar* const buf, const fileinfo& finfo, minterface** globalmap) {
     if(globalmap[u] != nullptr && globalmap[u]->size() != 0) {
         return globalmap[u];
     }
@@ -186,7 +166,7 @@ minterface* jx(const ll u, ll& endpoint, const uchar* const buf, const fileinfo&
         ll retendpoint;
         if(globalmap[next] == nullptr
         || globalmap[next]->size() == 0) {
-            globalmap[next] = jx(next, retendpoint, buf, finfo);
+            globalmap[next] = jx(next, retendpoint, buf, finfo, globalmap);
         }
         return globalmap[u] = globalmap[next];
     }
@@ -215,8 +195,8 @@ minterface* jx(const ll u, ll& endpoint, const uchar* const buf, const fileinfo&
     else if(type == 7) { // map 111 00000
         marray* array = new marray();
         for(ll i = 0; i < len; i++) {
-            mstring* a = (mstring*)jx(v, v, buf, finfo);
-            mstring* b = (mstring*)jx(v, v, buf, finfo);
+            mstring* a = (mstring*)jx(v, v, buf, finfo, globalmap);
+            mstring* b = (mstring*)jx(v, v, buf, finfo, globalmap);
             array->m[*a] = *b;
         }
         endpoint = v;
@@ -227,18 +207,17 @@ minterface* jx(const ll u, ll& endpoint, const uchar* const buf, const fileinfo&
 }
 
 int main(int argc, char** argv) {
-    if(argc < 3) {
-        exit(-1);
-    }
-    string filename = argv[1];
-    string dir = argv[2];
+     if(argc < 3) {
+         exit(-1);
+     }
+     string filename = argv[1];
+     string dir = argv[2];
     if(dir.back() != '\\' && dir.back() != '/') {
         dir.push_back('/');
     }
-    filesystem::create_directories(dir);
-    // _setmaxstdio(2048);
-    // printf("_getmaxstdio() = %lld\n", _getmaxstdio());
-    auto clockbegin = clock();
+    _setmaxstdio(2048);
+    printf("_getmaxstdio() = %lld\n", _getmaxstdio());
+    auto lastclock = clock();
     fileinfo finfo;
     FILE* fp = fopen(filename.c_str(), "rb");
     if(fp == NULL) {
@@ -256,7 +235,8 @@ int main(int argc, char** argv) {
         exit(2);
     }
     fclose(fp);
-    auto clockreadfile = clock();
+    printf("===== read file end, time = %lld\n", clock() - lastclock);
+    lastclock = clock();
 
     finfo.size = len;
     uint32* bufu32 = (uint32*)buf;
@@ -305,13 +285,17 @@ int main(int argc, char** argv) {
         printf("finfo.recordsize != 32, is %lld\n", ll(finfo.recordsize));
         exit(999);
     }
-    auto clockreadmeta = clock();
+    printf("===== read meta data end, time = %lld\n", clock() - lastclock);
+    lastclock = clock();
 
-    dfs(0, 0, bufu32, finfo, bitset<128>{0});
-    printf("error count = %lld\n", errors.size());
+    vector<node> datas;
+    datas.reserve(finfo.nodecount / 8);
+    dfs(0, 0, bufu32, finfo, bitset<128>{0}, datas);
+    // printf("error count = %lld\n", errors.size());
     printf("data count = %lld\n", datas.size());
     printf("maxdep = %lld, \t mindep = %lld\n", maxdep, mindep);
-    auto clockdfs = clock();
+    printf("===== dfs read ip end, time = %lld\n", clock() - lastclock);
+    lastclock = clock();
 
     bitset<128> ipa("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111100000000000000000000000000000000");
     bitset<128> ipb("00000000000000000000000000000000000000000000000000000000000000000000000000000000111111111111111100000000000000000000000000000000");
@@ -319,82 +303,76 @@ int main(int argc, char** argv) {
 
     mstring::buf = (char*)malloc((finfo.metabegin - finfo.databegin) * sizeof(char));
     buf[0] = 0;
-    globalmap = (minterface**)malloc((finfo.size - 0) * sizeof(minterface*));
+    minterface **globalmap = (minterface**)malloc((finfo.size - 0) * sizeof(minterface*));
     memset(globalmap, 0, (finfo.size - 0) * sizeof(minterface*));
-    map<mstring, FILE*> countrycode;
-    mstring sccode = mstring("country_code", 12);
-    mstring sasn = mstring("asn", 3);
-    mstring sasname = mstring("as_name", 7);
-    FILE* filegoogle = fopen((dir + "google").c_str(), "wb+");
-    FILE* filecloudflare = fopen((dir + "cloudflare").c_str(), "wb+");
-    FILE* filetelegram = fopen((dir + "telegram").c_str(), "wb+");
-    fprintf(filegoogle,"{\"version\": 2,\"rules\": [{\"ip_cidr\": [");
-    fprintf(filecloudflare, "{\"version\": 2,\"rules\": [{\"ip_cidr\": [");
-    fprintf(filetelegram, "{\"version\": 2,\"rules\": [{\"ip_cidr\": [");
+    map<mstring, queue<node*> > queues;
+    mstring countrycode = mstring("country_code", 12);
+    mstring asn = mstring("asn", 3);
+    mstring asname = mstring("as_name", 7);
     char abuf[1000];
+    vector<mstring> keys {{"Google", 6}, {"Cloudflare", 10}, {"Telegram", 8}};
 
-    for(ll i = 0; datas.size() > 0 && i < 50000000000; i++) {
-        node t = datas.front();
-        datas.pop();
+    for(ll i = 0; i < datas.size(); i++) {
+        node &t = datas[i];
         ll endpoint;
         globalj = i;
         if(globalmap[t.data] == NULL || globalmap[t.data]->size() == 0) {
-            globalmap[t.data] = jx(t.data, endpoint, buf, finfo);
+            globalmap[t.data] = jx(t.data, endpoint, buf, finfo, globalmap);
         }
-        mstring tccode = globalmap[t.data]->find(sccode);
-        if(tccode.size() == 0) {
-            printf("tccode.size() == 0\n");
+        mstring tcountrycode = ((marray*)(globalmap[t.data]))->find(countrycode);
+        if(tcountrycode.size() == 0) {
+            printf("country code .size() == 0\n");
             continue;
         }
-        if(countrycode[tccode] == nullptr) {
-//            countrycode[tccode] = stdout;
-            countrycode[tccode] = fopen((dir + tccode.str()).c_str(), "wb+");
-            fprintf(countrycode[tccode], "{\"version\": 2,\"rules\": [{\"ip_cidr\": [");
-        }
-//        fprintf(stdout, "%10lld %s ", t.data, tccode.str());
-        if(t.dep >= 96 && (t.ip & ipa) == 0) {
-            ull ip = t.ip.to_ullong();
-            sprintf(abuf, "\"%lld.%lld.%lld.%lld/%lld\",",
-                    (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff, t.dep - 96
-                    );
-        }
-        else {
-            auto ip = t.ip;
-            sprintf(abuf, "\"%04llx:%04llx:%04llx:%04llx:%04llx:%04llx:%04llx:%04llx/%lld\",",
-                    ((ip >> 112) & bitset<128>(0xffff)).to_ullong(), ((ip >> 96) & bitset<128>(0xffff)).to_ullong(),
-                    ((ip >> 80)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 64) & bitset<128>(0xffff)).to_ullong(),
-                    ((ip >> 48)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 32) & bitset<128>(0xffff)).to_ullong(),
-                    ((ip >> 16)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 0)  & bitset<128>(0xffff)).to_ullong(),
-                    t.dep
-                    );
-        }
-        fprintf(countrycode[tccode], abuf);
-        auto tasname = globalmap[t.data]->find(sasname);
-        if(strstr(tasname.str(), "Google") != nullptr) {
-            fprintf(filegoogle, abuf);
-        }
-        else if(strstr(tasname.str(), "Cloudflare") != nullptr) {
-            fprintf(filecloudflare, abuf);
-        }
-        else if(strstr(tasname.str(), "Telegram") != nullptr) {
-            fprintf(filetelegram, abuf);
+        queues[tcountrycode].push(&t);
+        auto tasname = ((marray*)globalmap[t.data])->find(asname);
+        for(auto key: keys) {
+            if(strstr(tasname.str(), key.str())) {
+                queues[key].push(&t);
+                break;
+            }
         }
     }
-    fseek(filegoogle, -1, SEEK_END);
-    fprintf(filegoogle, "]}]}");
-    fseek(filecloudflare, -1, SEEK_END);
-    fprintf(filecloudflare, "]}]}");
-    fseek(filetelegram, -1, SEEK_END);
-    fprintf(filetelegram, "]}]}");
-    for(auto i: countrycode) {
-        fseek(i.second, -1, SEEK_END);
-        fprintf(i.second, "]}]}");
+    printf("===== read ip information end, time = %lld\n", clock() - lastclock);
+    lastclock = clock();
+
+    for(auto i: queues) {
+        FILE* fp = fopen((dir + i.first.str()).c_str(), "wb+");
+        FILE* fp2 = fopen((dir + "!" + i.first.str()).c_str(), "wb+");
+        fprintf(fp, "{\"version\": 2,\"rules\": [{\"ip_cidr\": [");
+        fprintf(fp2, "{\"version\": 2,\"rules\": [{\"invert\": false,\"ip_cidr\": [");
+        while(i.second.size() > 0) {
+            node &t = *i.second.front();
+            i.second.pop();
+            if(t.dep >= 96 && (t.ip & ipa) == 0) {
+                ull ip = t.ip.to_ullong();
+                sprintf(abuf, "\"%lld.%lld.%lld.%lld/%lld\",",
+                        (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff, t.dep - 96
+                        );
+            }
+            else {
+                auto ip = t.ip;
+                sprintf(abuf, "\"%04llx:%04llx:%04llx:%04llx:%04llx:%04llx:%04llx:%04llx/%lld\",",
+                        ((ip >> 112) & bitset<128>(0xffff)).to_ullong(), ((ip >> 96) & bitset<128>(0xffff)).to_ullong(),
+                        ((ip >> 80)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 64) & bitset<128>(0xffff)).to_ullong(),
+                        ((ip >> 48)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 32) & bitset<128>(0xffff)).to_ullong(),
+                        ((ip >> 16)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 0)  & bitset<128>(0xffff)).to_ullong(),
+                        t.dep
+                        );
+            }
+            fprintf(fp, abuf);
+            fprintf(fp2, abuf);
+        }
+        fseek(fp, -1, SEEK_END);
+        fprintf(fp, "]}]}");
+        fclose(fp);
+        fseek(fp2, -1, SEEK_END);
+        fprintf(fp2, "]}]}");
+        fclose(fp2);
     }
-    auto clockreaddata = clock();
-    printf("%lld\n", clockreaddata - clockbegin);
-    cout << mstring::index << endl;
-    printf("clock\n readfile:%lld\n readmeta:%lld\n dfs:%lld\n readdata:%lld\n",
-           clockreadfile - clockbegin, clockreadmeta - clockreadfile, clockdfs - clockreadmeta, clockreaddata - clockdfs);
-//    cin >> ret;
+    printf("===== write file end, time = %lld\n", clock() - lastclock);
+    lastclock = clock();
+
+    printf("mstring::index=%lld\n", mstring::index);
     return 0;
 }
