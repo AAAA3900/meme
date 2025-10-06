@@ -340,7 +340,7 @@ int main(int argc, char** argv) {
         FILE* fp = fopen((dir + i.first.str()).c_str(), "wb+");
         FILE* fp2 = fopen((dir + "!" + i.first.str()).c_str(), "wb+");
         fprintf(fp, "{\"version\": 2,\"rules\": [{\"ip_cidr\": [");
-        fprintf(fp2, "{\"version\": 2,\"rules\": [{\"invert\": false,\"ip_cidr\": [");
+        fprintf(fp2, "{\"version\": 2,\"rules\": [{\"invert\": true,\"ip_cidr\": [");
         while(i.second.size() > 0) {
             node &t = *i.second.front();
             i.second.pop();
