@@ -6,6 +6,7 @@
 #include <queue>
 #include <map>
 #include <cstring>
+#include <filesystem>
 
 using namespace std;
 
@@ -40,7 +41,7 @@ struct fileinfo {
 
 inline uint32 dz32(uint32 x) {
     return ((x >> 24) & 0x000000ff) | ((x >> 8) & 0x0000ff00)
-            | ((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000);
+           | ((x << 8) & 0x00ff0000) | ((x << 24) & 0xff000000);
 }
 
 class minterface {
@@ -72,7 +73,7 @@ public:
         return 0 == strcmp(buf + p, t);
     }
     bool operator==(const mstring& t) const {
-         return (size() == t.size()) && (strcmp(buf + p, buf + t.p) == 0);
+        return (size() == t.size()) && (strcmp(buf + p, buf + t.p) == 0);
     }
     bool operator!=(const mstring& t) const {
         return !(*this == t);
@@ -165,7 +166,7 @@ minterface* jx(const ll u, ll& endpoint, const uchar* const buf, const fileinfo&
         next += finfo.databegin;
         ll retendpoint;
         if(globalmap[next] == nullptr
-        || globalmap[next]->size() == 0) {
+           || globalmap[next]->size() == 0) {
             globalmap[next] = jx(next, retendpoint, buf, finfo, globalmap);
         }
         return globalmap[u] = globalmap[next];
@@ -207,16 +208,15 @@ minterface* jx(const ll u, ll& endpoint, const uchar* const buf, const fileinfo&
 }
 
 int main(int argc, char** argv) {
-     if(argc < 3) {
-         exit(-1);
-     }
-     string filename = argv[1];
-     string dir = argv[2];
+    if(argc < 3) {
+        exit(-1);
+    }
+    string filename = argv[1];
+    string dir = argv[2];
     if(dir.back() != '\\' && dir.back() != '/') {
         dir.push_back('/');
     }
-    _setmaxstdio(2048);
-    printf("_getmaxstdio() = %lld\n", _getmaxstdio());
+    filesystem::create_directories(dir);
     auto lastclock = clock();
     fileinfo finfo;
     FILE* fp = fopen(filename.c_str(), "rb");
@@ -348,7 +348,7 @@ int main(int argc, char** argv) {
                 ull ip = t.ip.to_ullong();
                 sprintf(abuf, "\"%lld.%lld.%lld.%lld/%lld\",",
                         (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff, t.dep - 96
-                        );
+                );
             }
             else {
                 auto ip = t.ip;
@@ -358,7 +358,7 @@ int main(int argc, char** argv) {
                         ((ip >> 48)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 32) & bitset<128>(0xffff)).to_ullong(),
                         ((ip >> 16)  & bitset<128>(0xffff)).to_ullong(), ((ip >> 0)  & bitset<128>(0xffff)).to_ullong(),
                         t.dep
-                        );
+                );
             }
             fprintf(fp, abuf);
             fprintf(fp2, abuf);
