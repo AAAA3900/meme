@@ -338,9 +338,7 @@ int main(int argc, char** argv) {
 
     for(auto i: queues) {
         FILE* fp = fopen((dir + i.first.str()).c_str(), "wb+");
-        FILE* fp2 = fopen((dir + "!" + i.first.str()).c_str(), "wb+");
         fprintf(fp, "{\"version\": 2,\"rules\": [{\"ip_cidr\": [");
-        fprintf(fp2, "{\"version\": 2,\"rules\": [{\"invert\": true,\"ip_cidr\": [");
         while(i.second.size() > 0) {
             node &t = *i.second.front();
             i.second.pop();
@@ -361,14 +359,10 @@ int main(int argc, char** argv) {
                 );
             }
             fprintf(fp, abuf);
-            fprintf(fp2, abuf);
         }
         fseek(fp, -1, SEEK_END);
         fprintf(fp, "]}]}");
         fclose(fp);
-        fseek(fp2, -1, SEEK_END);
-        fprintf(fp2, "]}]}");
-        fclose(fp2);
     }
     printf("===== write file end, time = %lld\n", clock() - lastclock);
     lastclock = clock();
