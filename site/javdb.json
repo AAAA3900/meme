@@ -1,0 +1,17 @@
+{
+    "version": 3,
+    "rules": [
+        {
+            "domain": [
+                "api.btyjscl.com", 
+                "tp-iu.cmastd.com", 
+                "h.gzankun.com", 
+                "jdforrepam.com", 
+                "api.ffaoa.com", 
+                "app-1317577018.cos.ap-guangzhou.myqcloud.com",
+                "o40mfdfc.ovslegovideo.sched.apdcdn.com", 
+                "2dnqcz98.ovslegodl.sched.ovscdns.com"
+            ]
+        }
+    ]
+}
