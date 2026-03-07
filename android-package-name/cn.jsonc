@@ -47,12 +47,28 @@
 				"com.cainiao.wireless",	// 菜鸟
 				"com.eg.android.AlipayGphone",	// 支付宝
 				"com.MobileTicket",	// 铁路12306
+				"com.tmri.app.main",	// 交管12123
+				"cn.cyberIdentity.certification", // 国家网络身份认证
 				"com.ct.client",	// 中国电信
 				"com.sinovatech.unicom.ui",	// 中国联通
 				"com.greenpoint.android.mc10086.activity",	// 中国移动
+				"com.cn21.ecloud",	// 天翼云盘
 				"com.chinamobild.mcloud",	// 中国移动云盘
 				"com.baidu.netdisk",	// 百度网盘
+				"com.baidu.netdisk.youth",	// 百度网盘青春版
+				"com.alicloud.databox",	// 阿里云盘
+				"com.ylmf.androidclient",	// 115
+				"com.tencent.pcgame.123123yunpan", // 123云盘
+				"nutstore.android",	// 坚果云
+				"com.tencent.pcgame.shajianguoyun",	// 坚果云
+				"com.antutu.ABenchMark",	// 安兔兔测评
+				"com.antutu.benchmark.full",	// 安兔兔测评3D
+				"com.youdao.dict",	// 网易有道词典
+				"com.youdao.translator",	// 有道翻译官
+				"com.mi.health", 	// 小米运动健康
+				"com.miui.huanji",	// 小米换机
 				"com.dragon.read",	// 番茄免费小说
+				"com.lemon.lv",	// 剪映
 				"com.ss.android.ugc.aweme",	// 抖音
 				"com.ss.android.ugc.aweme.lite",	// 抖音极速版
 				"com.smile.gifmaker"	// 快手
